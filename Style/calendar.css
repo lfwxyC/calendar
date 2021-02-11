@@ -1,0 +1,48 @@
+/*日历*/
+#qt_calendar_calendarview {
+    background-color: rgba(68,84,106,1);
+}
+#qt_calendar_monthbutton {
+    background-color: rgba(68,84,106,1);
+}
+#qt_calendar_yearbutton {
+    background-color: rgba(68,84,106,1);
+}
+#qt_calendar_yearedit {
+    background-color: rgba(68,84,106,1);
+}
+#qt_calendar_navigationbar {
+    background-color: rgba(68,84,106,1);
+}
+
+QCalendarWidget QAbstractItemView {
+    color: white;
+	selection-background-color: white; 
+    selection-color: black; 
+}
+
+QCalendarWidget QTableView {
+    alternate-background-color: rgb(176,196,222);
+}
+ 
+/* days in other months */
+QCalendarWidget QAbstractItemView:disabled { 
+	color: rgb(220,220,220); 
+}
+
+QToolButton#qt_calendar_prevmonth {
+    background: transparent;
+    border: none;
+    width: 40px;
+    qproperty-icon: url(:/images/arrow.png);
+}
+QToolButton#qt_calendar_nextmonth {
+    background: transparent;
+    border: none;
+    width: 40px;
+    qproperty-icon: url(:/images/rightArrow.png);
+}
+
+QCalendarWidget QMenu{
+    background-color: rgb(176,196,222);
+}
