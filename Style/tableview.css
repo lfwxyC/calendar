@@ -1,0 +1,17 @@
+QTableView {
+    selection-background-color: rgba(68,84,106,1);
+}
+
+QTableView QTableCornerButton::section {
+	background: rgba(68,84,106,1);
+}
+
+QHeaderView::section, QTableCornerButton::section{
+	padding: 1px;
+	border: none;
+	border-bottom: 1px solid rgb(176,196,222);
+	border-right: 1px solid rgb(176,196,222);
+	border-bottom: 1px solid gray;
+	background-color:rgb(176,196,222);
+	color:white;
+}
