@@ -1,0 +1,191 @@
+#include "privatetodoinsert.h"
+#include "ui_privatetodoinsert.h"
+
+#include <QtSql/QSqlQuery>
+#include <QInputDialog>
+#include <QMessageBox>
+#include <QDebug>
+
+privateTodoInsert::privateTodoInsert(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::privateTodoInsert)
+{
+    ui->setupUi(this);
+    db=QSqlDatabase::database("conn");
+    query=new QSqlQuery(db);
+
+    ui->duplicateCB->addItem(QString::asprintf("不重复"));
+    ui->duplicateCB->addItem(QString::asprintf("每周"));
+    ui->duplicateCB->addItem(QString::asprintf("每月"));
+    ui->duplicateCB->addItem(QString::asprintf("每年"));
+
+    ui->okBt->setDefault(true);
+
+    id=0;
+
+    QString select=QString("select max(id) from privateTodo");
+
+    query->exec(select);
+    while (query->next()) {
+        id=query->value(0).toInt();
+    }
+}
+
+privateTodoInsert::~privateTodoInsert()
+{
+    delete ui;
+}
+
+void privateTodoInsert::sendInfo(const QDate& date,const QString& user,PrivateWindow *privateWin)
+{
+    QDate today=QDate::currentDate();
+
+    ui->dateEdit->setMinimumDate(today);
+    ui->dateEdit->setDate(date);
+    ui->dateEdit->setCalendarPopup(true);
+    this->user=user;
+    this->privateWin=privateWin;
+    QString select=QString("select distinct(ttag) from privateTodo where tuser='%1'").arg(user);
+
+    /*ui->comboBox->addItem(QString::asprintf("会议"));
+    ui->comboBox->addItem(QString::asprintf("生日"));
+    ui->comboBox->addItem(QString::asprintf("比赛"));*/
+
+    query->exec(select);
+    while (query->next()) {
+        QString tag=query->value(0).toString();
+        ui->comboBox->addItem(tag);
+    }
+}
+
+void privateTodoInsert::on_addLabelBt_clicked()
+{
+    bool ok;
+    QString tag=QInputDialog::getText(this,tr("新增标签"),tr("请输入标签名称"),QLineEdit::Normal,0,&ok);
+
+    if(ok&&!tag.isEmpty())
+    {
+        QString selectTag;
+        QString select=QString("select distinct(ttag) from privateTodo where tuser='%1'").arg(user);
+
+        query->exec(select);
+        while (query->next()) {
+            selectTag=query->value(0).toString();
+            if(tag==selectTag)
+            {
+                QMessageBox::warning(this,"warning","标签已存在！",QMessageBox::Ok);
+                return;
+            }
+        }
+
+        ui->comboBox->addItem(tag);
+        ui->comboBox->setCurrentText(tag);
+        //QString insert=QString("insert into privateTodoTag values('%1','%2')").arg(tag).arg(user);
+
+        //query->exec(insert);
+    }
+}
+
+void privateTodoInsert::on_updateLabelBt_clicked()
+{
+    QString currentTag=ui->comboBox->currentText();
+
+    if(currentTag=="会议"||currentTag=="生日"||currentTag=="比赛")
+    {
+        //QMessageBox::warning(this,"warning","默认标签不能修改！",QMessageBox::Ok);
+        //return;
+    }
+
+    int index=ui->comboBox->currentIndex();
+    bool ok;
+    QString updateTag=QInputDialog::getText(this,tr("修改标签"),tr("请输入修改后的标签名称"),QLineEdit::Normal,0,&ok);
+
+    if(ok&&!updateTag.isEmpty())
+    {
+        ui->comboBox->setEditable(true);
+        ui->comboBox->setItemText(index,updateTag);
+        //QString update=QString("update privateTodoTag set tag='%1' where tag='%2'and tuser='%3'").arg(updateTag).arg(currentTag).arg(user);
+
+        //query->exec(update);
+    }
+}
+
+void privateTodoInsert::on_eraseLabelBt_clicked()
+{
+    QString deleteTag=ui->comboBox->currentText();
+
+    if(deleteTag=="会议"||deleteTag=="生日"||deleteTag=="比赛")
+    {
+        //QMessageBox::warning(this,"warning","默认标签不能删除！",QMessageBox::Ok);
+        //return;
+    }
+
+    int ok = QMessageBox::warning(this,tr("删除标签!"),tr("确认删除当前标签？"),QMessageBox::Yes,QMessageBox::No);
+
+    if(ok == QMessageBox::Yes)
+    {
+        int index=ui->comboBox->currentIndex();
+        //QString deleteStr=QString("delete from privateTodoTag where tag='%1'and tuser='%2'").arg(deleteTag).arg(user);
+
+        ui->comboBox->removeItem(index);
+        //query->exec(deleteStr);
+    }
+}
+
+void privateTodoInsert::on_okBt_clicked()
+{
+    QDate insertDate=ui->dateEdit->date();
+    QTime insertTime=ui->timeEdit->time();
+    QString insertTag=ui->comboBox->currentText();
+    QString insertTitle=ui->titleLineEdit->text();
+    QString duplicate=ui->duplicateCB->currentText();
+    QDate maxDate=ui->dateEdit->maximumDate();
+
+    if(insertTitle==NULL)
+    {
+        QMessageBox::warning(this,"warning","主题不能为空！",QMessageBox::Ok);
+    }
+    else {
+        id++;
+
+        if(duplicate=="不重复")
+        {
+            QString insert=QString("insert into privateTodo values('%1','%2','%3','%4','%5','%6','%7')").arg(insertTag).arg(insertTitle).arg(insertDate.toString("yyyy-MM-dd")).arg(insertTime.toString("hh:mm:ss")).arg(user).arg(id).arg(duplicate);
+            query->exec(insert);
+        }
+        else if (duplicate=="每周") {
+            while (insertDate<=maxDate) {
+                QString insert=QString("insert into privateTodo values('%1','%2','%3','%4','%5','%6','%7')").arg(insertTag).arg(insertTitle).arg(insertDate.toString("yyyy-MM-dd")).arg(insertTime.toString("hh:mm:ss")).arg(user).arg(id).arg(duplicate);
+                query->exec(insert);
+                insertDate=insertDate.addDays(7);
+            }
+        }
+        else if (duplicate=="每月") {
+            while (insertDate<=maxDate) {
+                QString insert=QString("insert into privateTodo values('%1','%2','%3','%4','%5','%6','%7')").arg(insertTag).arg(insertTitle).arg(insertDate.toString("yyyy-MM-dd")).arg(insertTime.toString("hh:mm:ss")).arg(user).arg(id).arg(duplicate);
+                query->exec(insert);
+                insertDate=insertDate.addMonths(1);
+            }
+        }
+        else if (duplicate=="每年") {
+            while (insertDate<=maxDate) {
+                QString insert=QString("insert into privateTodo values('%1','%2','%3','%4','%5','%6','%7')").arg(insertTag).arg(insertTitle).arg(insertDate.toString("yyyy-MM-dd")).arg(insertTime.toString("hh:mm:ss")).arg(user).arg(id).arg(duplicate);
+                query->exec(insert);
+                insertDate=insertDate.addYears(1);
+            }
+        }
+
+        insertDate=ui->dateEdit->date();
+        QString str=QString("select * from privateTodo where tdate='%1'and tuser='%2'").arg(insertDate.toString("yyyy-MM-dd")).arg(user);
+
+        privateWin->setTodoTV(str);
+        privateWin->setTodoSearchCB();
+        this->close();
+    }
+}
+
+void privateTodoInsert::on_cancelBt_clicked()
+{
+    privateWin->setTodoSearchCB();
+    this->close();
+}
